@@ -1,0 +1,14 @@
+{
+  "schema_version":1,
+  "book":{
+    "id":"demo-local","title":"Le français sans fautes au quotidien",
+    "subtitle":"Première épreuve de la collection pratique",
+    "author_name":"Papeterie Reine & Fils","status":"draft","price_cents":1290,"format_name":"A5"
+  },
+  "collection":{"name":"Guides pratiques"},
+  "chapters":[
+    {"position":1,"title":"Accord du participe passé","review_status":"draft","content":"Le participe passé s'accorde selon l'auxiliaire et la construction de la phrase.\n\nExemple : Elles sont arrivées à l'heure.\n\nAttention : ce chapitre est un exemple fictif de mise en page. Toute règle doit être vérifiée auprès d'une source fiable avant publication."},
+    {"position":2,"title":"Homophones courants","review_status":"draft","content":"Les homophones ont la même prononciation, mais des significations ou orthographes différentes.\n\n- Ces : déterminant démonstratif.\n- Ses : déterminant possessif.\n\nCe passage est un contenu de démonstration, et non un manuscrit éditorial prêt à vendre."}
+  ],
+  "sources":[], "quality_checks":[],"approvals":[],"costs":[]
+}

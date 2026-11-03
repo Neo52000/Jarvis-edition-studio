@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.example
+web/config.js
+node_modules/
+__pycache__/
+.pytest_cache/
+*.pyc
+exports/
+.DS_Store

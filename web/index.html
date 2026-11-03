@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="robots" content="noindex,nofollow"/>
+  <title>JARVIS — Édition Studio</title>
+  <link rel="stylesheet" href="./style.css"/>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-symbol">J</span><div><strong>JARVIS</strong><small>ÉDITION STUDIO / V1</small></div></div>
+      <div class="side-heading">TABLEAU DE BORD</div>
+      <div class="side-card"><small>Collections</small><strong id="collection-count">—</strong><small>Livres</small><strong id="book-count">—</strong></div>
+      <button id="logout" class="secondary full" hidden>Déconnexion</button>
+      <div class="side-note">Studio indépendant. Aucun livre n'est publié automatiquement.</div>
+    </aside>
+    <main>
+      <header class="topbar"><div><div class="eyebrow">ATELIER ÉDITORIAL</div><h1>Pilotez vos publications</h1><p>Du premier brief au manuscrit contrôlé.</p></div><span class="status-pill">Validation humaine obligatoire</span></header>
+      <section id="message" class="message" aria-live="polite" hidden></section>
+      <section id="auth-panel" class="panel">
+        <h2>Accès privé</h2><p>Connectez-vous avec l'adresse autorisée sur votre projet Supabase.</p>
+        <form id="login-form" class="inline-form"><input id="login-email" type="email" placeholder="adresse@email.fr" required/><button type="submit">Recevoir mon lien de connexion</button></form>
+        <p class="hint">Supabase Auth doit être configuré avec l'URL de ce site dans ses redirections autorisées.</p>
+      </section>
+      <section id="dashboard" hidden>
+        <div class="workspace">
+          <section class="panel">
+            <div class="panel-head"><div><span class="eyebrow">01 / PORTFOLIO</span><h2>Livres en préparation</h2></div><button id="new-book">+ Nouveau livre</button></div>
+            <div class="toolbar"><select id="collection-filter"><option value="">Toutes les collections</option></select><button id="new-collection" class="secondary">+ Collection</button></div>
+            <div id="books" class="book-list"></div>
+          </section>
+          <section id="editor" class="panel" hidden>
+            <div class="panel-head"><div><span class="eyebrow">02 / DOSSIER LIVRE</span><h2 id="editor-title">—</h2><p id="editor-meta"></p></div><button id="download-snapshot" class="secondary">Exporter le dossier JSON</button></div>
+            <nav id="tabs" class="tabs" aria-label="Sections du livre">
+              <button data-tab="chapters" class="active">Chapitres</button><button data-tab="sources">Sources</button><button data-tab="quality">Contrôles qualité</button><button data-tab="costs">Coûts</button>
+            </nav>
+            <div id="tab-content"></div>
+            <div class="approval-area"><div><strong>Validation finale</strong><p id="approval-msg">Tous les chapitres doivent être relus et les 7 contrôles validés.</p></div><button id="approve" class="primary">Approuver le livre</button></div>
+          </section>
+        </div>
+      </section>
+      <footer>JARVIS Édition Studio · Base privée Supabase · Exports hors publication · © Papeterie Reine & Fils</footer>
+    </main>
+  </div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
