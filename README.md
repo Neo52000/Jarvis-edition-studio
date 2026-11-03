@@ -14,8 +14,8 @@ Plateforme privée de microédition pour Papeterie Reine & Fils : **Claude Code 
 
 ## Important : état du projet
 
-Ceci est un **prototype opérationnel en local**. Le schéma SQL n'a pas été appliqué
-à Supabase, le dépôt GitHub dédié n'a pas été créé et aucun site n'a été déployé.
+Ceci est un **prototype opérationnel en local**. Aucun site n'a été déployé ; l'état d'application
+des migrations Supabase est indiqué dans le rapport de déploiement.
 Les appels Claude nécessitent une installation Claude Code et son authentification.
 Le navigateur nécessite la configuration d'un **nouveau** projet Supabase isolé.
 Les PDF générés sont des **épreuves de travail** : pas de conformité KDP certifiée.
@@ -46,7 +46,9 @@ Nom suggéré : `jarvis-edition-studio` ; région suggérée : France (`eu-west-
 Activer Supabase Auth par lien magique (OTP), définir le `Site URL` et les
 `Redirect URLs` vers l'origine depuis laquelle `web/` est servi.
 
-Dans le **nouveau** projet uniquement, exécuter `sql/001_schema.sql` depuis SQL Editor.
+Dans le **nouveau** projet uniquement, appliquer les migrations versionnées de `supabase/migrations/`
+dans l'ordre (`supabase db push`, ou MCP/SQL Editor ; `sql/001_schema.sql` n'est que la référence du schéma initial).
+Auth : activer l'e-mail OTP, **désactiver les inscriptions publiques**, inviter l'unique adresse autorisée.
 Vérifier les tables, leurs politiques RLS, puis faire un test avec deux utilisateurs
 pour confirmer que chacun ne voit que ses propres livres. Ne pas rendre
 l'inscription publique si le studio reste mono-utilisateur : restreindre les
@@ -106,9 +108,14 @@ PDF/DOCX et procéder aux formalités de dépôt légal / ISBN / impression avan
 ## Tests
 
 ```bash
-python -m pytest tests -q
-node --check web/app.js
+python -m pytest tests -q                      # export, génération (CLI mocké), hygiène secrets
+node --check web/app.js && node --test tests/js/util.test.mjs
+# Tests RLS/triggers : base Postgres JETABLE et vide uniquement (jamais un projet Supabase)
+JARVIS_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:5432/scratch python -m pytest tests/test_sql.py -q
 ```
+
+`web/vendor/supabase.js` est le bundle `@supabase/supabase-js@2.118.0` figé (hash vérifié par les tests).
+La CI ne déploie ni ne publie rien.
 
 ## Architecture
 
