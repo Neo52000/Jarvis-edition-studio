@@ -97,23 +97,58 @@ def export_docx(snapshot: dict, path: Path, draft: bool) -> None:
                 if not line: continue
                 if line.startswith('### '): doc.add_heading(line[4:],level=3)
                 elif line.startswith('## '): doc.add_heading(line[3:],level=2)
-                elif line.startswith('- '): doc.add_paragraph(line[2:],style='List Bullet')
-                else: doc.add_paragraph(line)
+                elif line.startswith('- '): add_runs(doc.add_paragraph(style='List Bullet'), line[2:])
+                else: add_runs(doc.add_paragraph(), line)
     doc.core_properties.title = book['title']
     doc.core_properties.author = book.get('author_name','')
     doc.save(path)
 
 
+FONT_DIRS = ['/usr/share/fonts/truetype/dejavu', '/usr/share/fonts/dejavu', '/Library/Fonts', 'C:/Windows/Fonts']
+
+
 def font_setup() -> str:
-    candidates = [
-        '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-        '/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf',
-    ]
-    for path in candidates:
-        if Path(path).exists():
-            pdfmetrics.registerFont(TTFont('StudioText',path))
+    """Register DejaVu Sans (full French coverage: oe ligature, euro sign, guillemets).
+
+    Fails loudly instead of silently falling back to Helvetica, which lacks some glyphs.
+    """
+    from reportlab.pdfbase.pdfmetrics import registerFontFamily
+    for d in FONT_DIRS:
+        regular, bold = Path(d) / 'DejaVuSans.ttf', Path(d) / 'DejaVuSans-Bold.ttf'
+        if regular.exists() and bold.exists():
+            pdfmetrics.registerFont(TTFont('StudioText', str(regular)))
+            pdfmetrics.registerFont(TTFont('StudioText-Bold', str(bold)))
+            registerFontFamily('StudioText', normal='StudioText', bold='StudioText-Bold',
+                               italic='StudioText', boldItalic='StudioText-Bold')
             return 'StudioText'
-    return 'Helvetica'  # Accent coverage not guaranteed on other systems.
+    raise RuntimeError('Police DejaVu Sans introuvable (paquet fonts-dejavu-core). '
+                       'Export PDF refuse de continuer pour ne pas perdre les accents/ligatures.')
+
+
+INLINE = re.compile(r'(\*\*[^*]+\*\*|\*[^*\s][^*]*\*)')
+
+
+def pdf_inline(text: str) -> str:
+    """Escape then convert **bold** / *italic* to ReportLab markup."""
+    out = []
+    for part in INLINE.split(text):
+        if part.startswith('**') and part.endswith('**') and len(part) > 4:
+            out.append('<b>' + html.escape(part[2:-2]) + '</b>')
+        elif part.startswith('*') and part.endswith('*') and len(part) > 2:
+            out.append('<i>' + html.escape(part[1:-1]) + '</i>')
+        else:
+            out.append(html.escape(part))
+    return ''.join(out)
+
+
+def add_runs(paragraph, text: str) -> None:
+    for part in INLINE.split(text):
+        if part.startswith('**') and part.endswith('**') and len(part) > 4:
+            paragraph.add_run(part[2:-2]).bold = True
+        elif part.startswith('*') and part.endswith('*') and len(part) > 2:
+            paragraph.add_run(part[1:-1]).italic = True
+        elif part:
+            paragraph.add_run(part)
 
 
 def export_pdf(snapshot: dict, path: Path, draft: bool) -> None:
@@ -123,6 +158,7 @@ def export_pdf(snapshot: dict, path: Path, draft: bool) -> None:
     subtitle_style = ParagraphStyle('Subtitle',fontName=family,fontSize=11,leading=17,alignment=TA_CENTER,spaceAfter=14)
     chapter_style = ParagraphStyle('Chapter',fontName=family,fontSize=15,leading=21,textColor=colors.HexColor('#1f3556'),spaceAfter=18)
     body_style = ParagraphStyle('Body',fontName=family,fontSize=9.3,leading=14.7,alignment=TA_LEFT,spaceAfter=11)
+    h2_style = ParagraphStyle('H2',fontName=family,fontSize=12,leading=17,textColor=colors.HexColor('#1f3556'),spaceBefore=8,spaceAfter=8)
     note_style = ParagraphStyle('Note',fontName=family,fontSize=8,leading=12,alignment=TA_CENTER,textColor=colors.HexColor('#a83333'))
     story=[Spacer(1,120),Paragraph(html.escape(book['title']),title_style)]
     if book.get('subtitle'): story.append(Paragraph(html.escape(book['subtitle']),subtitle_style))
@@ -136,9 +172,10 @@ def export_pdf(snapshot: dict, path: Path, draft: bool) -> None:
             for line in block.splitlines():
                 line=line.strip()
                 if not line:continue
-                text=line.lstrip('#').strip() if line.startswith('#') else line
-                if text.startswith('- '):text='• '+text[2:]
-                story.append(Paragraph(html.escape(text).replace('\n',' '),body_style))
+                if line.startswith('#'):
+                    story.append(Paragraph(pdf_inline(line.lstrip('#').strip()),h2_style));continue
+                text='• '+line[2:] if line.startswith('- ') else line
+                story.append(Paragraph(pdf_inline(text),body_style))
     doc=SimpleDocTemplate(str(path),pagesize=A5,leftMargin=47,rightMargin=47,topMargin=53,bottomMargin=52,
                           title=book['title'],author=book.get('author_name',''),pageCompression=1)
     def footer(canvas,doc):

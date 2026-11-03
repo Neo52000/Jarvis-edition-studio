@@ -1,8 +1,7 @@
-import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.95.0';
+import {h, safeFile, amount} from './util.js';
 import {SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY} from './config.js';
 
 const $ = id => document.getElementById(id);
-const h = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const CHECKS = [
   ['facts','Exactitude des informations'], ['language','Orthographe et lisibilité'],
   ['originality','Originalité et absence de plagiat'], ['copyright','Droits des textes et visuels'],
@@ -10,7 +9,7 @@ const CHECKS = [
   ['human_review','Relecture humaine complète']
 ];
 const statusLabel = {draft:'Brouillon',in_review:'En révision',approved:'Approuvé',archived:'Archivé'};
-const amount = cents => new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR'}).format((cents||0)/100);
+const {createClient} = window.supabase;
 let db, user, collections=[], books=[], selected=null, details=null, tab='chapters';
 
 function notice(value, error=false){const el=$('message');el.textContent=value;el.className='message'+(error?' error':'');el.hidden=false;}
@@ -22,7 +21,6 @@ function credentialCheck(){
   }
   return true;
 }
-function safeFile(v){return String(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9_-]+/g,'-').slice(0,64)||'livre';}
 function download(name,obj){const blob=new Blob([JSON.stringify(obj,null,2)],{type:'application/json;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);}
 async function query(table,options={}){let q=db.from(table).select('*');if(options.book_id)q=q.eq('book_id',options.book_id);if(options.owner_id)q=q.eq('owner_id',options.owner_id);if(options.order)q=q.order(options.order);const {data,error}=await q;if(error)throw error;return data;}
 async function insert(table,payload){const {data,error}=await db.from(table).insert(payload).select();if(error)throw error;return data;}
@@ -30,7 +28,7 @@ async function update(table,id,payload){const {data,error}=await db.from(table).
 async function remove(table,id){const {error}=await db.from(table).delete().eq('id',id);if(error)throw error;}
 async function login(){
   const email=$('login-email').value.trim();
-  const {error}=await db.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}});
+  const {error}=await db.auth.signInWithOtp({email,options:{shouldCreateUser:false,emailRedirectTo:location.origin+location.pathname}});
   if(error)throw error;notice('Lien envoyé. Consulte ta boîte mail pour te connecter.');
 }
 async function load(){
